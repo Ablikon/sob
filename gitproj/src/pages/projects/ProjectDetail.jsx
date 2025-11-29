@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { projectAPI, taskAPI } from '../../lib/api';
+import { useAuthStore } from '../../store/authStore';
 import { ArrowLeft, Users, Calendar, GitBranch, Plus, Edit, Trash2 } from 'lucide-react';
 
 export default function ProjectDetail() {
@@ -9,6 +10,7 @@ export default function ProjectDetail() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
     loadProject();
@@ -35,15 +37,60 @@ export default function ProjectDetail() {
       console.log('📋 Is array?', Array.isArray(data));
       console.log('📋 Has results?', data?.results);
       
-      // Убедимся что data это массив (может быть пагинация)
       const tasksArray = Array.isArray(data) ? data : (data?.results || []);
       console.log('📋 Setting tasks:', tasksArray);
       console.log('📋 Tasks count:', tasksArray.length);
-      
       setTasks(tasksArray);
     } catch (error) {
       console.error('Error loading tasks:', error);
-      setTasks([]); // Установим пустой массив при ошибке
+      setTasks([]);
+    }
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setShowTaskModal(true);
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!confirm('Удалить эту задачу?')) return;
+    try {
+      await taskAPI.delete(taskId);
+      await loadTasks();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Ошибка удаления задачи');
+    }
+  };
+
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) {
+        console.error('Task not found');
+        return;
+      }
+
+      const updatedTaskData = {
+        project: task.project,
+        title: task.title,
+        description: task.description || '',
+        priority: task.priority,
+        status: newStatus,
+        assignee_id: task.assignee_id || null,
+        deadline: task.deadline || '',
+      };
+
+      console.log('🔄 Updating task status:', taskId, 'to', newStatus);
+      console.log('📝 Sending data:', updatedTaskData);
+
+      await taskAPI.update(taskId, updatedTaskData);
+      console.log('✅ Task status updated successfully');
+      
+      await loadTasks();
+    } catch (error) {
+      console.error('❌ Error updating task status:', error.response?.data);
+      alert('Ошибка обновления статуса: ' + JSON.stringify(error.response?.data));
     }
   };
 
@@ -71,7 +118,6 @@ export default function ProjectDetail() {
           Назад к проектам
         </Link>
       </div>
-
       <div className="card">
         <div className="flex justify-between items-start mb-4">
           <div style={{ flex: 1 }}>
@@ -84,7 +130,6 @@ export default function ProjectDetail() {
             <p className="text-gray-600">{project.description}</p>
           </div>
         </div>
-
         <div className="grid grid-cols-4 mb-4">
           <div>
             <p className="text-sm text-gray-600">Участников</p>
@@ -123,13 +168,12 @@ export default function ProjectDetail() {
       {/* Задачи */}
       <div className="card">
         <div className="flex justify-between items-center mb-3">
-          <h3>Задачи</h3>
-          <button onClick={() => setShowTaskModal(true)} className="btn btn-primary btn-small">
+          <h3>Задачи ({tasks.length})</h3>
+          <button onClick={() => { setEditingTask(null); setShowTaskModal(true); }} className="btn btn-primary btn-small">
             <Plus size={16} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
             Добавить задачу
           </button>
         </div>
-
         {!Array.isArray(tasks) || tasks.length === 0 ? (
           <p className="text-gray-600 text-center">Нет задач</p>
         ) : (
@@ -138,26 +182,19 @@ export default function ProjectDetail() {
               const statusTasks = tasks.filter((task) => task.status === status);
               return (
                 <div key={status}>
-                  <h5 className="mb-2">{getTaskStatusText(status)}</h5>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="flex justify-between items-center mb-2">
+                    <h5 style={{ marginBottom: 0 }}>{getTaskStatusText(status)}</h5>
+                    <span className="badge badge-secondary text-sm">{statusTasks.length}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', minHeight: '200px' }}>
                     {statusTasks.map((task) => (
-                      <div key={task.id} className="card" style={{ padding: '1rem', marginBottom: 0 }}>
-                        <div className="flex justify-between items-start mb-2">
-                          <h6 style={{ marginBottom: 0 }}>{task.title}</h6>
-                          <span className={`badge badge-${getPriorityColor(task.priority)}`}>
-                            {getPriorityText(task.priority)}
-                          </span>
-                        </div>
-                        {task.description && (
-                          <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                        )}
-                        {task.deadline && (
-                          <p className="text-sm text-gray-600">
-                            <Calendar size={14} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} />
-                            {new Date(task.deadline).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        onEdit={handleEditTask}
+                        onDelete={handleDeleteTask}
+                        onStatusChange={handleStatusChange}
+                      />
                     ))}
                   </div>
                 </div>
@@ -188,19 +225,175 @@ export default function ProjectDetail() {
           </div>
         )}
       </div>
-
-      {showTaskModal && <CreateTaskModal projectId={id} onClose={() => setShowTaskModal(false)} onSuccess={loadTasks} />}
+      {showTaskModal && (
+        <TaskModal
+          projectId={id}
+          task={editingTask}
+          onClose={() => { setShowTaskModal(false); setEditingTask(null); }}
+          onSuccess={loadTasks}
+        />
+      )}
     </div>
   );
 }
 
-function CreateTaskModal({ projectId, onClose, onSuccess }) {
+function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
+  const [showMenu, setShowMenu] = useState(false);
+
+  return (
+    <div
+      className="card"
+      style={{ 
+        padding: '1rem', 
+        marginBottom: 0, 
+        cursor: 'pointer', 
+        position: 'relative',
+        transition: 'var(--transition)'
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-lg)'}
+      onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
+    >
+      <div className="flex justify-between items-start mb-2">
+        <h6 style={{ marginBottom: 0, flex: 1, cursor: 'pointer' }} onClick={() => onEdit(task)}>
+          {task.title}
+        </h6>
+        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+          <span className={`badge badge-${getPriorityColor(task.priority)}`} style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>
+            {getPriorityText(task.priority)}
+          </span>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0.25rem',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              ⋮
+            </button>
+            {showMenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '100%',
+                  background: 'white',
+                  border: '1px solid var(--gray-200)',
+                  borderRadius: 'var(--border-radius)',
+                  boxShadow: 'var(--shadow-lg)',
+                  zIndex: 10,
+                  minWidth: '150px'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => { onEdit(task); setShowMenu(false); }}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                >
+                  <Edit size={14} />
+                  Редактировать
+                </button>
+                <div style={{ borderTop: '1px solid var(--gray-200)' }}>
+                  <div style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', color: 'var(--gray-600)' }}>
+                    Переместить в:
+                  </div>
+                  {['todo', 'in_progress', 'review', 'done'].filter(s => s !== task.status).map(status => (
+                    <button
+                      key={status}
+                      onClick={() => { onStatusChange(task.id, status); setShowMenu(false); }}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem 1rem',
+                        border: 'none',
+                        background: 'none',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      {getTaskStatusText(status)}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => { onDelete(task.id); setShowMenu(false); }}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    color: 'var(--danger)',
+                    borderTop: '1px solid var(--gray-200)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                >
+                  <Trash2 size={14} />
+                  Удалить
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {task.description && (
+        <p className="text-sm text-gray-600 mb-2" style={{ lineHeight: '1.4' }}>
+          {task.description.length > 100 ? task.description.substring(0, 100) + '...' : task.description}
+        </p>
+      )}
+      
+      <div className="flex justify-between items-center">
+        {task.assignee_id && (
+          <div className="flex items-center gap-1 text-sm text-gray-600">
+            <Users size={14} />
+            <span>User {task.assignee_id}</span>
+          </div>
+        )}
+        {task.deadline && (
+          <div className="flex items-center gap-1 text-sm text-gray-600">
+            <Calendar size={14} />
+            <span>{new Date(task.deadline).toLocaleDateString()}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaskModal({ projectId, task, onClose, onSuccess }) {
+  const { user } = useAuthStore();
   const [formData, setFormData] = useState({
     project: parseInt(projectId),
-    title: '',
-    description: '',
-    priority: 'medium',
-    deadline: '',
+    title: task?.title || '',
+    description: task?.description || '',
+    priority: task?.priority || 'medium',
+    status: task?.status || 'todo',
+    assignee_id: task?.assignee_id || '',
+    deadline: task?.deadline || '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -210,19 +403,35 @@ function CreateTaskModal({ projectId, onClose, onSuccess }) {
     setLoading(true);
     setError('');
 
-    console.log('📝 Creating task with data:', formData);
+    const submitData = {
+      project: parseInt(formData.project),
+      title: formData.title,
+      description: formData.description || '',
+      priority: formData.priority,
+      status: formData.status,
+      assignee_id: formData.assignee_id ? parseInt(formData.assignee_id) : null,
+      deadline: formData.deadline || '',
+    };
+
+    console.log(task ? '📝 Updating task:' : '📝 Creating task:', submitData);
 
     try {
-      const response = await taskAPI.create(formData);
-      console.log('✅ Task created:', response.data);
-      console.log('🔄 Refreshing tasks list immediately...');
+      if (task) {
+        await taskAPI.update(task.id, submitData);
+        console.log('✅ Task updated');
+      } else {
+        const response = await taskAPI.create(submitData);
+        console.log('✅ Task created:', response.data);
+      }
       
-      // Сразу обновляем список задач без задержки
       await onSuccess();
       onClose();
     } catch (err) {
-      console.error('❌ Error creating task:', err.response?.data);
-      setError(err.response?.data?.detail || JSON.stringify(err.response?.data) || 'Ошибка создания задачи');
+      console.error('❌ Error saving task:', err.response?.data);
+      const errorMsg = err.response?.data?.detail || 
+                      JSON.stringify(err.response?.data) || 
+                      'Ошибка сохранения задачи';
+      setError(errorMsg);
       setLoading(false);
     }
   };
@@ -231,9 +440,8 @@ function CreateTaskModal({ projectId, onClose, onSuccess }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Создать задачу</h3>
+          <h3>{task ? 'Редактировать задачу' : 'Создать задачу'}</h3>
         </div>
-
         {error && <div className="alert alert-danger">{error}</div>}
 
         <form onSubmit={handleSubmit}>
@@ -245,6 +453,7 @@ function CreateTaskModal({ projectId, onClose, onSuccess }) {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               required
+              autoFocus
             />
           </div>
 
@@ -254,6 +463,7 @@ function CreateTaskModal({ projectId, onClose, onSuccess }) {
               className="form-textarea"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
             />
           </div>
 
@@ -265,11 +475,39 @@ function CreateTaskModal({ projectId, onClose, onSuccess }) {
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
               >
-                <option value="low">Низкий</option>
-                <option value="medium">Средний</option>
-                <option value="high">Высокий</option>
-                <option value="urgent">Срочный</option>
+                <option value="low">🟢 Низкий</option>
+                <option value="medium">🔵 Средний</option>
+                <option value="high">🟡 Высокий</option>
+                <option value="urgent">🔴 Срочный</option>
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Статус</label>
+              <select
+                className="form-select"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="todo">📝 К выполнению</option>
+                <option value="in_progress">🔄 В процессе</option>
+                <option value="review">👀 На проверке</option>
+                <option value="done">✅ Выполнено</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2">
+            <div className="form-group">
+              <label className="form-label">Ответственный (User ID)</label>
+              <input
+                type="number"
+                className="form-input"
+                value={formData.assignee_id}
+                onChange={(e) => setFormData({ ...formData, assignee_id: e.target.value })}
+                placeholder="Оставьте пустым если не назначен"
+              />
+              <small className="text-gray-600 text-sm">Ваш ID: {user?.id}</small>
             </div>
 
             <div className="form-group">
@@ -288,7 +526,7 @@ function CreateTaskModal({ projectId, onClose, onSuccess }) {
               Отмена
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <span className="loading"></span> : 'Создать'}
+              {loading ? <span className="loading"></span> : (task ? 'Сохранить' : 'Создать')}
             </button>
           </div>
         </form>

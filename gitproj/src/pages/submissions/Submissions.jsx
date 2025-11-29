@@ -17,20 +17,31 @@ export default function Submissions() {
 
   const loadSubmissions = async () => {
     try {
+      console.log('📤 Loading submissions, filter:', filter, 'user role:', user?.role);
+      
       let data;
       if (filter === 'my') {
         const res = await submissionAPI.mySubmissions(user?.role);
         data = res.data;
+        console.log('📤 My submissions response:', data);
       } else {
         const res = await submissionAPI.getAll();
         data = res.data;
+        console.log('📤 All submissions response:', data);
       }
       
-      // Убедимся что data это массив
-      setSubmissions(Array.isArray(data) ? data : []);
+      console.log('📤 Is array?', Array.isArray(data));
+      console.log('📤 Has results?', data?.results);
+      
+      // DRF может вернуть объект с пагинацией {results: [...]} или просто массив
+      const submissionsArray = Array.isArray(data) ? data : (data?.results || []);
+      console.log('📤 Setting submissions:', submissionsArray);
+      console.log('📤 Submissions count:', submissionsArray.length);
+      
+      setSubmissions(submissionsArray);
     } catch (error) {
-      console.error('Error loading submissions:', error);
-      setSubmissions([]); // Установим пустой массив при ошибке
+      console.error('❌ Error loading submissions:', error.response?.data || error);
+      setSubmissions([]);
     } finally {
       setLoading(false);
     }
@@ -162,13 +173,18 @@ function CreateSubmissionModal({ onClose, onSuccess }) {
     setLoading(true);
     setError('');
 
+    console.log('📤 Creating submission with data:', formData);
+
     try {
-      await submissionAPI.create(formData);
-      onSuccess();
+      const response = await submissionAPI.create(formData);
+      console.log('✅ Submission created:', response.data);
+      console.log('🔄 Refreshing submissions list...');
+      
+      await onSuccess();
       onClose();
     } catch (err) {
-      setError('Ошибка создания сдачи');
-    } finally {
+      console.error('❌ Error creating submission:', err.response?.data);
+      setError(err.response?.data?.detail || JSON.stringify(err.response?.data) || 'Ошибка создания сдачи');
       setLoading(false);
     }
   };
@@ -189,7 +205,7 @@ function CreateSubmissionModal({ onClose, onSuccess }) {
               type="number"
               className="form-input"
               value={formData.project_id}
-              onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, project_id: parseInt(e.target.value) || '' })}
               required
             />
           </div>
