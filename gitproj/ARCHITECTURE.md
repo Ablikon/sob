@@ -1,6 +1,6 @@
 # Student Project Hub - Архитектура системы
 
-## 📋 Оглавление
+##  Оглавление
 
 1. [Обзор системы](#обзор-системы)
 2. [Концепция проекта](#концепция-проекта)
@@ -21,7 +21,7 @@
 
 ---
 
-## 🎯 Обзор системы
+##  Обзор системы
 
 **Student Project Hub** - современная веб-платформа для управления студенческими проектами, организации командной работы и автоматизации процесса сдачи и проверки учебных заданий.
 
@@ -31,14 +31,14 @@
 
 ### Основные возможности
 
-- 🔐 **JWT-based аутентификация** - безопасная система входа с токенами
-- 👥 **Управление профилями** - профили студентов и преподавателей с навыками
-- 📁 **Проектный менеджмент** - создание проектов, задач, дедлайны
-- ✅ **Kanban-доски** - визуализация задач по статусам
-- 📤 **Система сдачи работ** - загрузка работ с ссылками на репозитории
-- ⭐ **Оценивание** - детальная система оценок с комментариями
-- 📊 **Dashboard** - персональная аналитика для каждого пользователя
-- 🔔 **История действий** - прозрачность всех операций
+-  **JWT-based аутентификация** - безопасная система входа с токенами
+-  **Управление профилями** - профили студентов и преподавателей с навыками
+-  **Проектный менеджмент** - создание проектов, задач, дедлайны
+-  **Kanban-доски** - визуализация задач по статусам
+-  **Система сдачи работ** - загрузка работ с ссылками на репозитории
+-  **Оценивание** - детальная система оценок с комментариями
+-  **Dashboard** - персональная аналитика для каждого пользователя
+-  **История действий** - прозрачность всех операций
 
 ### Технологический стек
 
@@ -65,7 +65,7 @@
 
 ---
 
-## 💡 Концепция проекта
+## Концепция проекта
 
 ### Зачем нужен этот проект?
 
@@ -91,7 +91,7 @@
 
 ---
 
-## 🎭 Проблематика и решение
+## Проблематика и решение
 
 ### Проблемы текущих решений
 
@@ -208,7 +208,7 @@
 
 ---
 
-## 🎨 Функциональные возможности
+## Функциональные возможности
 
 ### 1. Система аутентификации и авторизации
 
@@ -820,12 +820,12 @@ graph TB
 
 Каждый микросервис имеет **собственную базу данных**, что обеспечивает:
 
-✅ **Изоляцию данных** - сбой одного сервиса не влияет на другие  
-✅ **Независимое масштабирование** - каждая БД может масштабироваться отдельно  
-✅ **Технологическую свободу** - можно использовать разные СУБД  
-✅ **Простоту развертывания** - сервисы можно деплоить независимо  
+ **Изоляцию данных** - сбой одного сервиса не влияет на другие  
+ **Независимое масштабирование** - каждая БД может масштабироваться отдельно  
+ **Технологическую свободу** - можно использовать разные СУБД  
+ **Простоту развертывания** - сервисы можно деплоить независимо  
 
-❌ **Сложности:**
+ **Сложности:**
 - Нет foreign keys между сервисами
 - Требуется eventual consistency
 - Сложнее делать JOIN запросы
@@ -890,15 +890,15 @@ http {
 ```
 
 **Преимущества:**
-- ✅ Единая точка входа
-- ✅ Load balancing (в будущем)
-- ✅ SSL termination (в будущем)
-- ✅ Rate limiting (в будущем)
-- ✅ Кэширование (в будущем)
+-  Единая точка входа
+-  Load balancing (в будущем)
+-  SSL termination (в будущем)
+-  Rate limiting (в будущем)
+-  Кэширование (в будущем)
 
 ---
 
-## 🔐 Аутентификация и авторизация
+##  Аутентификация и авторизация
 
 ### JWT Authentication Flow
 
@@ -969,7 +969,7 @@ stateDiagram-v2
 
 ---
 
-## 🚀 Deployment
+##  Deployment
 
 ### Docker Compose Architecture
 
@@ -1045,7 +1045,7 @@ DB_PORT=5432
 
 ---
 
-## 📈 Масштабирование
+##  Масштабирование
 
 ### Horizontal Scaling Strategy
 
@@ -1104,61 +1104,61 @@ graph TB
 ### Performance Optimizations
 
 **Database:**
-- ✅ Индексы на foreign keys
-- ✅ Composite indexes для частых запросов
-- ✅ Database connection pooling
-- ⏳ Query optimization (N+1 problem)
-- ⏳ Materialized views для аналитики
+-  Индексы на foreign keys
+-  Composite indexes для частых запросов
+-  Database connection pooling
+-  Query optimization (N+1 problem)
+-  Materialized views для аналитики
 
 **Backend:**
-- ✅ JWT вместо session-based auth
-- ✅ Pagination для списков
-- ⏳ Background tasks (Celery)
-- ⏳ API response caching
-- ⏳ Async views (Django Async)
+-  JWT вместо session-based auth
+-  Pagination для списков
+-  Background tasks (Celery)
+-  API response caching
+-  Async views (Django Async)
 
 **Frontend:**
-- ✅ React code splitting
-- ✅ Lazy loading компонентов
-- ⏳ Service Workers (PWA)
-- ⏳ Image optimization
-- ⏳ GraphQL вместо REST (опционально)
+-  React code splitting
+-  Lazy loading компонентов
+-  Service Workers (PWA)
+-  Image optimization
+-  GraphQL вместо REST (опционально)
 
 ---
 
-## 🔒 Безопасность
+##  Безопасность
 
 ### Security Measures
 
 **Authentication:**
-- ✅ JWT с коротким lifetime (1h)
-- ✅ Refresh token rotation
-- ✅ Token blacklisting
-- ⏳ Rate limiting на login endpoint
-- ⏳ 2FA (Two-Factor Authentication)
+-  JWT с коротким lifetime (1h)
+-  Refresh token rotation
+-  Token blacklisting
+-  Rate limiting на login endpoint
+-  2FA (Two-Factor Authentication)
 
 **Authorization:**
-- ✅ Role-based access (student/teacher/admin)
-- ✅ Permission checks на уровне ViewSet
-- ⏳ Object-level permissions
-- ⏳ Audit logging
+-  Role-based access (student/teacher/admin)
+-  Permission checks на уровне ViewSet
+-  Object-level permissions
+-  Audit logging
 
 **Data Protection:**
-- ✅ Password hashing (Django default)
-- ✅ HTTPS (в production)
-- ⏳ Data encryption at rest
-- ⏳ Secrets management (HashiCorp Vault)
+-  Password hashing (Django default)
+-  HTTPS (в production)
+-  Data encryption at rest
+-  Secrets management (HashiCorp Vault)
 
 **API Security:**
-- ✅ CORS headers
-- ✅ CSRF protection
-- ⏳ Rate limiting (nginx)
-- ⏳ API versioning
-- ⏳ Input validation & sanitization
+-  CORS headers
+-  CSRF protection
+-  Rate limiting (nginx)
+-  API versioning
+-  Input validation & sanitization
 
 ---
 
-## 📊 Monitoring & Logging
+##  Monitoring & Logging
 
 ### Monitoring Stack (Future)
 
@@ -1209,7 +1209,7 @@ graph LR
 
 ---
 
-## 🧪 Testing Strategy
+##  Testing Strategy
 
 ### Test Pyramid
 
@@ -1242,7 +1242,7 @@ graph TB
 
 ---
 
-## 📝 API Documentation
+##  API Documentation
 
 ### Swagger/OpenAPI
 
@@ -1262,7 +1262,7 @@ graph TB
 
 ---
 
-## 🔄 CI/CD Pipeline (Future)
+##  CI/CD Pipeline (Future)
 
 ```mermaid
 graph LR
@@ -1277,60 +1277,3 @@ graph LR
 
 ---
 
-## 📚 Additional Resources
-
-### Documentation
-- [Django REST Framework](https://www.django-rest-framework.org/)
-- [JWT Authentication](https://django-rest-framework-simplejwt.readthedocs.io/)
-- [Docker Compose](https://docs.docker.com/compose/)
-- [React Documentation](https://react.dev/)
-
-### Best Practices
-- [Microservices Patterns](https://microservices.io/)
-- [12 Factor App](https://12factor.net/)
-- [REST API Design](https://restfulapi.net/)
-
----
-
-## 🎯 Roadmap
-
-### v1.0 (Current)
-- ✅ Базовая архитектура
-- ✅ JWT аутентификация
-- ✅ CRUD для всех сущностей
-- ✅ Docker containerization
-- ✅ Swagger documentation
-
-### v1.1 (Next)
-- ⏳ Unit tests (>80% coverage)
-- ⏳ Integration tests
-- ⏳ CI/CD pipeline
-- ⏳ Monitoring & Logging
-- ⏳ Performance optimization
-
-### v2.0 (Future)
-- ⏳ Real-time notifications (WebSocket)
-- ⏳ File upload to S3
-- ⏳ Email notifications
-- ⏳ Advanced analytics
-- ⏳ Mobile app (React Native)
-
----
-
-## 👥 Team & Contributors
-
-**Architecture:** System Design Team  
-**Backend:** Django Team  
-**Frontend:** React Team  
-**DevOps:** Infrastructure Team  
-
----
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
----
-
-**Last Updated:** November 29, 2025  
-**Version:** 1.0.0

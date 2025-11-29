@@ -89,41 +89,100 @@ export default function Submissions() {
                   <h4 className="mb-1">{submission.title}</h4>
                   <p className="text-sm text-gray-600">Проект ID: {submission.project_id}</p>
                 </div>
-                <span className={`badge badge-${getSubmissionStatusColor(submission.status)}`}>
+                <span 
+                  className={`badge badge-${getSubmissionStatusColor(submission.status)}`}
+                  style={{ 
+                    fontSize: '0.875rem',
+                    padding: '0.5rem 1rem',
+                    fontWeight: '600',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <span 
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: 'currentColor',
+                      display: 'inline-block'
+                    }}
+                  />
                   {getSubmissionStatusText(submission.status)}
                 </span>
               </div>
 
-              <p className="text-gray-600 mb-3">{submission.description}</p>
+              <p className="text-gray-600 mb-3" style={{ 
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical'
+              }}>
+                {submission.description}
+              </p>
 
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {submission.repository_url && (
-                  <a href={submission.repository_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-small">
-                    Репозиторий
+                  <a 
+                    href={submission.repository_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-secondary btn-small"
+                    style={{ textAlign: 'center' }}
+                  >
+                    📦 Репозиторий
                   </a>
                 )}
                 {submission.demo_url && (
-                  <a href={submission.demo_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-small">
-                    Демо
+                  <a 
+                    href={submission.demo_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-secondary btn-small"
+                    style={{ textAlign: 'center' }}
+                  >
+                    🚀 Демо
                   </a>
                 )}
               </div>
 
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center" style={{ 
+                padding: '0.75rem',
+                background: 'var(--gray-50)',
+                borderRadius: 'var(--border-radius)'
+              }}>
                 <div className="flex items-center gap-2">
-                  <Calendar size={16} className="text-gray-600" />
+                  <Calendar size={18} className="text-gray-600" />
                   <span className="text-sm text-gray-600">
-                    {new Date(submission.submitted_at).toLocaleDateString()}
+                    {new Date(submission.submitted_at).toLocaleDateString('ru-RU', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })}
                   </span>
                 </div>
 
                 {submission.grade !== null && (
-                  <div className="flex items-center gap-1">
-                    <Star size={16} style={{ color: 'var(--warning)' }} />
-                    <span className="font-semibold">
+                  <div 
+                    className="flex items-center gap-2"
+                    style={{
+                      background: 'white',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: 'var(--border-radius)',
+                      border: '2px solid var(--warning)'
+                    }}
+                  >
+                    <Star size={18} style={{ color: 'var(--warning)', fill: 'var(--warning)' }} />
+                    <span className="font-semibold" style={{ fontSize: '1.1rem' }}>
                       {submission.grade} / {submission.max_grade}
-                      {submission.grade_percentage && ` (${submission.grade_percentage}%)`}
                     </span>
+                    {submission.grade_percentage && (
+                      <span className="badge badge-warning" style={{ marginLeft: '0.5rem' }}>
+                        {submission.grade_percentage}%
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -134,7 +193,7 @@ export default function Submissions() {
                   className="btn btn-primary btn-small mt-3"
                   style={{ width: '100%' }}
                 >
-                  Оценить
+                  📝 Оценить работу
                 </button>
               )}
             </div>
