@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Auth Service
+  auth_service:
+    build:
+      context: ./backend/auth_service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - DB_NAME=auth_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - SECRET_KEY=django-insecure-dev-key
+      - DEBUG=True
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/auth_service:/app
+
+  # User Service
+  user_service:
+    build:
+      context: ./backend/user_service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - DB_NAME=user_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - SECRET_KEY=django-insecure-dev-key
+      - DEBUG=True
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/user_service:/app
+
+  # Project Service
+  project_service:
+    build:
+      context: ./backend/project_service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - DB_NAME=project_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - SECRET_KEY=django-insecure-dev-key
+      - DEBUG=True
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/project_service:/app
+
+  # Submission Service
+  submission_service:
+    build:
+      context: ./backend/submission_service
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      - DB_NAME=submission_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - SECRET_KEY=django-insecure-dev-key
+      - DEBUG=True
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/submission_service:/app
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8001
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.js:/app/vite.config.js
+      - /app/node_modules
+    depends_on:
+      - auth_service
+      - user_service
+      - project_service
+      - submission_service
+
+volumes:
+  postgres_data:
