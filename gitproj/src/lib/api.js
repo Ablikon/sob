@@ -48,15 +48,26 @@ export const profileAPI = {
 
 // Project API - С токенами
 export const projectAPI = {
-  getAll: (params) => axios.get('http://localhost:8003/api/projects/', 
-    { params, headers: getAuthHeaders() }
-  ),
-  getOne: (id) => axios.get(`http://localhost:8003/api/projects/${id}/`, 
-    { headers: getAuthHeaders() }
-  ),
-  myProjects: () => axios.get('http://localhost:8003/api/projects/my_projects/', 
-    { headers: getAuthHeaders() }
-  ),
+  getAll: (params) => {
+    console.log('📦 projectAPI.getAll called with params:', params);
+    return axios.get('http://localhost:8003/api/projects/', 
+      { params, headers: getAuthHeaders() }
+    );
+  },
+  getOne: (id) => {
+    console.log('📦 projectAPI.getOne called with id:', id);
+    return axios.get(`http://localhost:8003/api/projects/${id}/`, 
+      { headers: getAuthHeaders() }
+    );
+  },
+  myProjects: () => {
+    console.log('📦 projectAPI.myProjects called');
+    const headers = getAuthHeaders();
+    console.log('📦 Headers:', headers);
+    return axios.get('http://localhost:8003/api/projects/my_projects/', 
+      { headers }
+    );
+  },
   create: (data) => axios.post('http://localhost:8003/api/projects/', data, 
     { headers: getAuthHeaders() }
   ),
@@ -76,15 +87,26 @@ export const projectAPI = {
 
 // Task API - С токенами
 export const taskAPI = {
-  getAll: (params) => axios.get('http://localhost:8003/api/tasks/', 
-    { params, headers: getAuthHeaders() }
-  ),
-  getOne: (id) => axios.get(`http://localhost:8003/api/tasks/${id}/`, 
-    { headers: getAuthHeaders() }
-  ),
-  myTasks: () => axios.get('http://localhost:8003/api/tasks/my_tasks/', 
-    { headers: getAuthHeaders() }
-  ),
+  getAll: (params) => {
+    console.log('📋 taskAPI.getAll called with params:', params);
+    return axios.get('http://localhost:8003/api/tasks/', 
+      { params, headers: getAuthHeaders() }
+    );
+  },
+  getOne: (id) => {
+    console.log('📋 taskAPI.getOne called with id:', id);
+    return axios.get(`http://localhost:8003/api/tasks/${id}/`, 
+      { headers: getAuthHeaders() }
+    );
+  },
+  myTasks: () => {
+    console.log('📋 taskAPI.myTasks called');
+    const headers = getAuthHeaders();
+    console.log('📋 Headers:', headers);
+    return axios.get('http://localhost:8003/api/tasks/my_tasks/', 
+      { headers }
+    );
+  },
   create: (data) => axios.post('http://localhost:8003/api/tasks/', data, 
     { headers: getAuthHeaders() }
   ),

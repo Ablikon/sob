@@ -16,33 +16,69 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    if (user) {
+      loadDashboard();
+    }
+  }, [user]);
 
   const loadDashboard = async () => {
     try {
+      console.log('📊 Loading dashboard data...');
+      console.log('👤 Current user:', user);
+      
+      // Загружаем данные параллельно
       const [projectsRes, tasksRes, submissionsRes] = await Promise.all([
-        projectAPI.myProjects(),
-        taskAPI.myTasks(),
-        submissionAPI.mySubmissions(user?.role),
+        projectAPI.myProjects().catch(err => {
+          console.error('❌ Error loading projects:', err.response?.data || err);
+          return { data: [] };
+        }),
+        taskAPI.myTasks().catch(err => {
+          console.error('❌ Error loading tasks:', err.response?.data || err);
+          return { data: [] };
+        }),
+        submissionAPI.mySubmissions(user?.role).catch(err => {
+          console.error('❌ Error loading submissions:', err.response?.data || err);
+          return { data: [] };
+        }),
       ]);
 
-      // Убедимся что все данные это массивы
-      const projects = Array.isArray(projectsRes.data) ? projectsRes.data : [];
-      const tasks = Array.isArray(tasksRes.data) ? tasksRes.data : [];
-      const submissions = Array.isArray(submissionsRes.data) ? submissionsRes.data : [];
+      console.log('📦 Projects response:', projectsRes);
+      console.log('📋 Tasks response:', tasksRes);
+      console.log('📤 Submissions response:', submissionsRes);
 
-      setStats({
+      // Убедимся что все данные это массивы
+      const projects = Array.isArray(projectsRes.data) 
+        ? projectsRes.data 
+        : (projectsRes.data?.results || []);
+      
+      const tasks = Array.isArray(tasksRes.data) 
+        ? tasksRes.data 
+        : (tasksRes.data?.results || []);
+      
+      const submissions = Array.isArray(submissionsRes.data) 
+        ? submissionsRes.data 
+        : (submissionsRes.data?.results || []);
+
+      console.log('✅ Processed projects:', projects.length);
+      console.log('✅ Processed tasks:', tasks.length);
+      console.log('✅ Processed submissions:', submissions.length);
+
+      // ИСПРАВЛЕНО: создаём новый объект stats
+      const newStats = {
         projects: projects.length,
         tasks: tasks.length,
         submissions: submissions.length,
-      });
+      };
+      
+      console.log('📊 Setting stats:', newStats);
+      setStats(newStats);
 
       setRecentProjects(projects.slice(0, 5));
       setRecentTasks(tasks.slice(0, 5));
+      
+      console.log('✅ Dashboard data loaded successfully');
     } catch (error) {
-      console.error('Error loading dashboard:', error);
-      // Устанавливаем дефолтные значения при ошибке
+      console.error('❌ Fatal error loading dashboard:', error);
       setStats({ projects: 0, tasks: 0, submissions: 0 });
       setRecentProjects([]);
       setRecentTasks([]);
@@ -74,7 +110,14 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Мои проекты</p>
-              <h2 className="mt-1">{stats.projects}</h2>
+              <h2 className="mt-1" style={{ 
+                fontSize: '2.5rem', 
+                fontWeight: 'bold',
+                color: '#111827',
+                lineHeight: '1'
+              }}>
+                {stats.projects}
+              </h2>
             </div>
             <FolderKanban size={40} style={{ color: 'var(--primary-600)' }} />
           </div>
@@ -84,7 +127,14 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Мои задачи</p>
-              <h2 className="mt-1">{stats.tasks}</h2>
+              <h2 className="mt-1" style={{ 
+                fontSize: '2.5rem', 
+                fontWeight: 'bold',
+                color: '#111827',
+                lineHeight: '1'
+              }}>
+                {stats.tasks}
+              </h2>
             </div>
             <CheckSquare size={40} style={{ color: 'var(--success)' }} />
           </div>
@@ -94,7 +144,14 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Сдачи работ</p>
-              <h2 className="mt-1">{stats.submissions}</h2>
+              <h2 className="mt-1" style={{ 
+                fontSize: '2.5rem', 
+                fontWeight: 'bold',
+                color: '#111827',
+                lineHeight: '1'
+              }}>
+                {stats.submissions}
+              </h2>
             </div>
             <FileText size={40} style={{ color: 'var(--warning)' }} />
           </div>
@@ -106,7 +163,7 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header">
             <div className="flex justify-between items-center">
-              <h3>Последние проекты</h3>
+              <h3>Последние проекты ({recentProjects.length})</h3>
               <Link to="/projects" className="text-primary text-sm">
                 Все проекты →
               </Link>
@@ -114,7 +171,12 @@ export default function Dashboard() {
           </div>
 
           {recentProjects.length === 0 ? (
-            <p className="text-gray-600 text-center">Нет проектов</p>
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <p className="text-gray-600">Нет проектов</p>
+              <Link to="/projects" className="btn btn-primary btn-small" style={{ marginTop: '1rem' }}>
+                Создать проект
+              </Link>
+            </div>
           ) : (
             <div>
               {recentProjects.map((project) => (
@@ -151,7 +213,7 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header">
             <div className="flex justify-between items-center">
-              <h3>Мои задачи</h3>
+              <h3>Мои задачи ({recentTasks.length})</h3>
               <Link to="/projects" className="text-primary text-sm">
                 Все задачи →
               </Link>
@@ -159,7 +221,12 @@ export default function Dashboard() {
           </div>
 
           {recentTasks.length === 0 ? (
-            <p className="text-gray-600 text-center">Нет задач</p>
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <p className="text-gray-600">Нет задач</p>
+              <p className="text-sm text-gray-600" style={{ marginTop: '0.5rem' }}>
+                Задачи появятся когда вас назначат на проект
+              </p>
+            </div>
           ) : (
             <div>
               {recentTasks.map((task) => (

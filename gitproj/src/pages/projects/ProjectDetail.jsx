@@ -31,18 +31,37 @@ export default function ProjectDetail() {
   const loadTasks = async () => {
     try {
       console.log('📋 Loading tasks for project:', id);
-      const { data } = await taskAPI.getAll({ project_id: id });
       
-      console.log('📋 Tasks response:', data);
-      console.log('📋 Is array?', Array.isArray(data));
-      console.log('📋 Has results?', data?.results);
+      // ИСПРАВЛЕНО: передаём project_id как число
+      const response = await taskAPI.getAll({ project_id: parseInt(id) });
+      const data = response.data;
       
-      const tasksArray = Array.isArray(data) ? data : (data?.results || []);
-      console.log('📋 Setting tasks:', tasksArray);
+      console.log('📋 Full response:', response);
+      console.log('📋 Response data:', data);
+      console.log('📋 Status:', response.status);
+      
+      // Обработка разных форматов ответа
+      let tasksArray = [];
+      if (Array.isArray(data)) {
+        tasksArray = data;
+      } else if (data && Array.isArray(data.results)) {
+        tasksArray = data.results;
+      } else if (data && typeof data === 'object') {
+        console.log('⚠️ Data is object, keys:', Object.keys(data));
+        tasksArray = [];
+      }
+      
+      console.log('📋 Final tasks array:', tasksArray);
       console.log('📋 Tasks count:', tasksArray.length);
+      
+      if (tasksArray.length > 0) {
+        console.log('📋 First task:', tasksArray[0]);
+      }
+      
       setTasks(tasksArray);
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      console.error('❌ Error loading tasks:', error);
+      console.error('❌ Error response:', error.response);
       setTasks([]);
     }
   };
@@ -54,6 +73,7 @@ export default function ProjectDetail() {
 
   const handleDeleteTask = async (taskId) => {
     if (!confirm('Удалить эту задачу?')) return;
+    
     try {
       await taskAPI.delete(taskId);
       await loadTasks();
@@ -174,8 +194,11 @@ export default function ProjectDetail() {
             Добавить задачу
           </button>
         </div>
+
         {!Array.isArray(tasks) || tasks.length === 0 ? (
-          <p className="text-gray-600 text-center">Нет задач</p>
+          <p className="text-gray-600 text-center">
+            Нет задач для проекта #{id}. Создайте первую задачу!
+          </p>
         ) : (
           <div className="grid grid-cols-4">
             {['todo', 'in_progress', 'review', 'done'].map((status) => {
@@ -225,6 +248,7 @@ export default function ProjectDetail() {
           </div>
         )}
       </div>
+      
       {showTaskModal && (
         <TaskModal
           projectId={id}
@@ -241,12 +265,12 @@ function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div
-      className="card"
+    <div 
+      className="card" 
       style={{ 
         padding: '1rem', 
         marginBottom: 0, 
-        cursor: 'pointer', 
+        cursor: 'pointer',
         position: 'relative',
         transition: 'var(--transition)'
       }}
@@ -359,13 +383,11 @@ function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
           </div>
         </div>
       </div>
-      
       {task.description && (
         <p className="text-sm text-gray-600 mb-2" style={{ lineHeight: '1.4' }}>
           {task.description.length > 100 ? task.description.substring(0, 100) + '...' : task.description}
         </p>
       )}
-      
       <div className="flex justify-between items-center">
         {task.assignee_id && (
           <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -443,7 +465,6 @@ function TaskModal({ projectId, task, onClose, onSuccess }) {
           <h3>{task ? 'Редактировать задачу' : 'Создать задачу'}</h3>
         </div>
         {error && <div className="alert alert-danger">{error}</div>}
-
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Название *</label>
@@ -456,7 +477,6 @@ function TaskModal({ projectId, task, onClose, onSuccess }) {
               autoFocus
             />
           </div>
-
           <div className="form-group">
             <label className="form-label">Описание</label>
             <textarea
@@ -466,7 +486,6 @@ function TaskModal({ projectId, task, onClose, onSuccess }) {
               rows={3}
             />
           </div>
-
           <div className="grid grid-cols-2">
             <div className="form-group">
               <label className="form-label">Приоритет</label>
@@ -481,7 +500,6 @@ function TaskModal({ projectId, task, onClose, onSuccess }) {
                 <option value="urgent">🔴 Срочный</option>
               </select>
             </div>
-
             <div className="form-group">
               <label className="form-label">Статус</label>
               <select
@@ -496,7 +514,6 @@ function TaskModal({ projectId, task, onClose, onSuccess }) {
               </select>
             </div>
           </div>
-
           <div className="grid grid-cols-2">
             <div className="form-group">
               <label className="form-label">Ответственный (User ID)</label>
@@ -509,7 +526,6 @@ function TaskModal({ projectId, task, onClose, onSuccess }) {
               />
               <small className="text-gray-600 text-sm">Ваш ID: {user?.id}</small>
             </div>
-
             <div className="form-group">
               <label className="form-label">Дедлайн</label>
               <input
@@ -520,7 +536,6 @@ function TaskModal({ projectId, task, onClose, onSuccess }) {
               />
             </div>
           </div>
-
           <div className="modal-footer">
             <button type="button" onClick={onClose} className="btn btn-secondary">
               Отмена

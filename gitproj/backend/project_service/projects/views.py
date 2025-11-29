@@ -99,15 +99,23 @@ class TaskViewSet(viewsets.ModelViewSet):
         """Фильтрация задач"""
         queryset = Task.objects.all()
         
-        # Фильтр по проекту
+        # Фильтр по проекту - ИСПРАВЛЕНО: конвертируем в int
         project_id = self.request.query_params.get('project_id')
         if project_id:
-            queryset = queryset.filter(project_id=project_id)
+            try:
+                queryset = queryset.filter(project_id=int(project_id))
+                print(f'📋 Filtering tasks by project_id={project_id}')
+                print(f'📋 Found {queryset.count()} tasks')
+            except (ValueError, TypeError):
+                print(f'❌ Invalid project_id: {project_id}')
         
         # Фильтр по исполнителю
         assignee_id = self.request.query_params.get('assignee_id')
         if assignee_id:
-            queryset = queryset.filter(assignee_id=assignee_id)
+            try:
+                queryset = queryset.filter(assignee_id=int(assignee_id))
+            except (ValueError, TypeError):
+                pass
         
         # Фильтр по статусу
         status_filter = self.request.query_params.get('status')
